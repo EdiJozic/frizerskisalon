@@ -52,6 +52,8 @@ export default function TimeGrid({ columns, bookingsByColumn, onCreateRequest, o
   const [dragCreate, setDragCreate] = useState<DragCreateState | null>(null)
   const [dragMove, setDragMove] = useState<DragMoveState | null>(null)
   const colRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const pointerStartY = useRef<number | null>(null)
+  const isScrolling = useRef(false)
 
   const yToMinutes = (columnKey: string, clientY: number) => {
     const el = colRefs.current[columnKey]
@@ -61,14 +63,41 @@ export default function TimeGrid({ columns, bookingsByColumn, onCreateRequest, o
     return clampToGrid(snapToGrid(rawMin, 5))
   }
 
-  const handleColPointerDown = (columnKey: string, e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('[data-booking-block]')) return
-    const startMinute = yToMinutes(columnKey, e.clientY)
-    setDragCreate({ columnKey, startMinute, currentMinute: startMinute + 15 })
-    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+ const handleColPointerDown = (
+  columnKey: string,
+  e: React.PointerEvent
+) => {
+
+  if ((e.target as HTMLElement).closest('[data-booking-block]')) {
+    return
   }
 
+  pointerStartY.current = e.clientY
+  isScrolling.current = false
+
+  const startMinute = yToMinutes(columnKey, e.clientY)
+
+  setDragCreate({
+    columnKey,
+    startMinute,
+    currentMinute: startMinute + 15
+  })
+
+  ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+}
+
   const handleColPointerMove = (columnKey: string, e: React.PointerEvent) => {
+    if (pointerStartY.current !== null) {
+  const diff = Math.abs(
+    e.clientY - pointerStartY.current
+  )
+
+  if (diff > 10) {
+    isScrolling.current = true
+    setDragCreate(null)
+    return
+  }
+}
     if (dragCreate && dragCreate.columnKey === columnKey) {
       const m = yToMinutes(columnKey, e.clientY)
       setDragCreate((s) => (s ? { ...s, currentMinute: m } : s))
@@ -92,6 +121,10 @@ export default function TimeGrid({ columns, bookingsByColumn, onCreateRequest, o
   }
 
   const finishCreate = () => {
+    if (isScrolling.current) {
+  setDragCreate(null)
+  return
+}
     if (!dragCreate) return
     const col = columns.find((c) => c.key === dragCreate.columnKey)
     if (col) {
@@ -159,7 +192,7 @@ export default function TimeGrid({ columns, bookingsByColumn, onCreateRequest, o
       </div>
 
       {/* Columns */}
-      <div className="flex min-w-0 flex-1 overflow-x-auto snap-x snap-mandatory" onPointerUp={handlePointerUp} onPointerLeave={() => {}}>
+      <div className="flex min-w-0 flex-1 overflow-auto snap-x snap-mandatory" onPointerUp={handlePointerUp} onPointerLeave={() => {}}>
         {columns.map((col) => {
           const dayBookings = bookingsByColumn.get(col.key) ?? []
           const todayFlag = isToday?.(col.date)
@@ -169,16 +202,23 @@ export default function TimeGrid({ columns, bookingsByColumn, onCreateRequest, o
               className="min-w-[220px] flex-1 snap-start border-r border-ink-200 last:border-r-0 dark:border-ink-700"
             >
               <div
-                className={`flex h-12 flex-col items-center justify-center border-b border-ink-200 px-1 text-center dark:border-ink-700 ${
-                  todayFlag ? 'bg-brass-50 dark:bg-brass-950/40' : ''
-                }`}
-              >
-                <span className="text-sm font-semibold text-ink-800 dark:text-ink-100">{col.label}</span>
-                {col.sublabel && <span className="text-[11px] text-ink-400 dark:text-ink-500">{col.sublabel}</span>}
-              </div>
+  className={`sticky top-0 z-30 flex h-12 flex-col items-center justify-center border-b border-ink-200 px-1 text-center bg-white dark:bg-ink-900 dark:border-ink-700 ${
+    todayFlag ? 'bg-brass-50 dark:bg-brass-950/40' : ''
+  }`}
+>
+  <span className="text-sm font-semibold text-ink-800 dark:text-ink-100">
+    {col.label}
+  </span>
+
+  {col.sublabel && (
+    <span className="text-[11px] text-ink-400 dark:text-ink-500">
+      {col.sublabel}
+    </span>
+  )}
+</div>
               <div
                 ref={(el) => (colRefs.current[col.key] = el)}
-                className="relative touch-none bg-white dark:bg-ink-900"
+                className="relative touch-auto bg-white dark:bg-ink-900"
                 style={{ height: gridHeight }}
                 onPointerDown={(e) => handleColPointerDown(col.key, e)}
                 onPointerMove={(e) => handleColPointerMove(col.key, e)}
