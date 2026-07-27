@@ -70,56 +70,20 @@ export function useBookings(salonId: string | null, rangeStart: Date, rangeEnd: 
     }
   }, [salonId, load])
 
-  const hasOverlap = (barberId: string, start: string, end: string, excludeId?: string) => {
-    return bookings.some((b) => {
-      if (b.barber_id !== barberId) return false
-      if (excludeId && b.id === excludeId) return false
-      const bs = new Date(b.start_time).getTime()
-      const be = new Date(b.end_time).getTime()
-      const s = new Date(start).getTime()
-      const e = new Date(end).getTime()
-      return s < be && e > bs
-    })
-  }
-
   const createBooking = async (input: BookingInput): Promise<{ error: string | null }> => {
     if (!salonId) return { error: 'Nema aktivnog salona.' }
-    if (hasOverlap(input.barber_id, input.start_time, input.end_time)) {
-      return { error: 'Termin se preklapa s postojećom rezervacijom za ovog frizera.' }
-    }
     const { error } = await supabase.from('bookings').insert({ ...input, salon_id: salonId })
-    if (error) {
-      if (error.message.includes('no_overlap_per_barber')) {
-        return { error: 'Termin se preklapa s postojećom rezervacijom za ovog frizera.' }
-      }
-      return { error: error.message }
-    }
-    return { error: null }
+    return { error: error?.message ?? null }
   }
 
   const updateBooking = async (id: string, patch: Partial<BookingInput>): Promise<{ error: string | null }> => {
-    const current = bookings.find((b) => b.id === id)
-    if (current && (patch.start_time || patch.end_time || patch.barber_id)) {
-      const start = patch.start_time ?? current.start_time
-      const end = patch.end_time ?? current.end_time
-      const barberId = patch.barber_id ?? current.barber_id
-      if (hasOverlap(barberId, start, end, id)) {
-        return { error: 'Termin se preklapa s postojećom rezervacijom za ovog frizera.' }
-      }
-    }
     const { error } = await supabase.from('bookings').update(patch).eq('id', id)
-    if (error) {
-      if (error.message.includes('no_overlap_per_barber')) {
-        return { error: 'Termin se preklapa s postojećom rezervacijom za ovog frizera.' }
-      }
-      return { error: error.message }
-    }
-    return { error: null }
+    return { error: error?.message ?? null }
   }
 
   const deleteBooking = async (id: string) => {
     await supabase.from('bookings').delete().eq('id', id)
   }
 
-  return { bookings, loading, syncError, hasOverlap, createBooking, updateBooking, deleteBooking, reload: load }
+  return { bookings, loading, syncError, createBooking, updateBooking, deleteBooking, reload: load }
 }

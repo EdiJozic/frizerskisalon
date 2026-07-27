@@ -61,7 +61,7 @@ export default function TopBar({
   }
 
   return (
-    <div className="flex flex-col gap-2 border-b border-ink-100 bg-white/90 px-3 py-2.5 backdrop-blur dark:border-ink-800 dark:bg-ink-900/90 sm:px-5 sm:py-3">
+    <div className="relative z-40 flex flex-col gap-2 border-b border-ink-100 bg-white/90 px-3 py-2.5 backdrop-blur dark:border-ink-800 dark:bg-ink-900/90 sm:px-5 sm:py-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brass-600 text-white">
@@ -92,7 +92,7 @@ export default function TopBar({
             </button>
             {menuOpen && (
               <div
-                className="absolute right-0 z-40 mt-2 w-56 overflow-hidden rounded-xl border border-ink-100 bg-white py-1 shadow-pop dark:border-ink-700 dark:bg-ink-800"
+                className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-ink-100 bg-white py-1 shadow-pop dark:border-ink-700 dark:bg-ink-800"
                 onMouseLeave={() => setMenuOpen(false)}
               >
                 <MenuItem icon={<Users size={16} />} label="Upravljaj frizerima" onClick={onOpenBarberManager} />

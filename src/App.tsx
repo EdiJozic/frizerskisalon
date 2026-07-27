@@ -14,7 +14,7 @@ import { useClients } from '@/hooks/useClients'
 import { useBookings } from '@/hooks/useBookings'
 import { exportBackup, importBackup } from '@/lib/backup'
 import { printSchedule } from '@/lib/print'
-import { dayRange, weekRange, monthRange, daysInWeek } from '@/lib/dateUtils'
+import { dayRange, weekRange, monthRange, daysInWeek, DEFAULT_BOOKING_MINUTES } from '@/lib/dateUtils'
 import type { Booking, CalendarViewMode } from '@/types'
 import { SERVICE_COLORS } from '@/types'
 
@@ -61,7 +61,7 @@ export default function App() {
     return monthRange(cursorDate)
   }, [view, cursorDate])
 
-  const { bookings, hasOverlap, createBooking, updateBooking, deleteBooking } = useBookings(salonId, range.start, range.end)
+  const { bookings, createBooking, updateBooking, deleteBooking } = useBookings(salonId, range.start, range.end)
   const { searchClients, findOrCreateClient } = useClients(salonId)
 
   if (loading) {
@@ -91,11 +91,10 @@ export default function App() {
     else setCursorDate((d) => addMonths(d, dir))
   }
 
-  const openCreateDraft = (barberId: string, date: Date, startMin: number, endMin: number) => {
+  const openCreateDraft = (barberId: string, date: Date, startMin: number) => {
     const start = new Date(date)
     start.setHours(7, 0, 0, 0)
     const startAt = new Date(start.getTime() + startMin * 60000)
-    const endAt = new Date(start.getTime() + endMin * 60000)
     setDraft({
       barberId,
       clientId: null,
@@ -106,7 +105,6 @@ export default function App() {
       description: '',
       color: SERVICE_COLORS[0].value,
       start: startAt,
-      end: endAt,
       reminderEnabled: false
     })
     setModalOpen(true)
@@ -124,7 +122,6 @@ export default function App() {
       description: b.description ?? '',
       color: b.color,
       start: new Date(b.start_time),
-      end: new Date(b.end_time),
       reminderEnabled: b.reminder_enabled
     })
     setModalOpen(true)
@@ -132,6 +129,7 @@ export default function App() {
 
   const handleSaveDraft = async (d: BookingDraft) => {
     const client = await findOrCreateClient(d.firstName.trim(), d.lastName.trim(), d.phone.trim())
+    const endTime = new Date(d.start.getTime() + DEFAULT_BOOKING_MINUTES * 60000)
     const payload = {
       barber_id: d.barberId,
       client_id: client?.id ?? d.clientId,
@@ -142,17 +140,17 @@ export default function App() {
       description: d.description.trim() || null,
       color: d.color,
       start_time: d.start.toISOString(),
-      end_time: d.end.toISOString(),
+      end_time: endTime.toISOString(),
       reminder_enabled: d.reminderEnabled
     }
     if (d.id) return updateBooking(d.id, payload)
     return createBooking(payload)
   }
 
-  const handleCommitMove = async (booking: Booking, columnKeyIsBarberOrDay: string, newStart: Date, newEnd: Date) => {
+  const handleCommitMove = async (booking: Booking, columnKeyIsBarberOrDay: string, newStart: Date) => {
     // in day view columns are barbers; in week view columns are days (barber fixed)
     const barberId = view === 'day' ? columnKeyIsBarberOrDay : booking.barber_id
-    if (hasOverlap(barberId, newStart.toISOString(), newEnd.toISOString(), booking.id)) return
+    const newEnd = new Date(newStart.getTime() + DEFAULT_BOOKING_MINUTES * 60000)
     await updateBooking(booking.id, { barber_id: barberId, start_time: newStart.toISOString(), end_time: newEnd.toISOString() })
   }
 
@@ -227,21 +225,16 @@ export default function App() {
             }}
           />
         ) : (
-         <TimeGrid
-  columns={columns}
-  bookingsByColumn={bookingsByColumn}
-  onCreateRequest={(columnKey, date, start, end) =>
-    openCreateDraft(
-      view === 'week' ? selectedBarberId : columnKey,
-      date,
-      start,
-      end
-    )
-  }
-  onOpenBooking={openEditDraft}
-  onCommitMove={handleCommitMove}
-  isToday={(d) => isSameDay(d, new Date())}
-/>
+          <TimeGrid
+            columns={columns}
+            bookingsByColumn={bookingsByColumn}
+            onCreateRequest={(columnKey, date, startMin) =>
+              openCreateDraft(view === 'week' ? selectedBarberId : columnKey, date, startMin)
+            }
+            onOpenBooking={openEditDraft}
+            onCommitMove={handleCommitMove}
+            isToday={(d) => isSameDay(d, new Date())}
+          />
         )}
       </div>
 

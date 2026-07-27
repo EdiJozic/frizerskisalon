@@ -13,6 +13,10 @@ import { hr } from 'date-fns/locale'
 export const DAY_START_HOUR = 7
 export const DAY_END_HOUR = 21
 export const PX_PER_MINUTE = 1.1 // grid density; ~66px per hour
+// Termini više nemaju vrijeme završetka koje unosi korisnik — svaki termin
+// se prikazuje kao okvir fiksne visine počevši od vremena početka, tako da
+// se termini mogu slagati proizvoljno blizu jedan drugom (ili preklapati).
+export const DEFAULT_BOOKING_MINUTES = 20
 
 export function minutesFromDayStart(date: Date) {
   return (date.getHours() - DAY_START_HOUR) * 60 + date.getMinutes()

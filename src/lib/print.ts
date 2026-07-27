@@ -10,7 +10,7 @@ export function printSchedule(title: string, bookings: Booking[], barbers: Barbe
     .map(
       (b) => `
         <tr>
-          <td>${format(new Date(b.start_time), 'HH:mm')}–${format(new Date(b.end_time), 'HH:mm')}</td>
+          <td>${format(new Date(b.start_time), 'HH:mm')}</td>
           <td>${barberName(b.barber_id)}</td>
           <td>${escapeHtml(b.client_first_name)} ${escapeHtml(b.client_last_name)}</td>
           <td>${escapeHtml(b.client_phone)}</td>

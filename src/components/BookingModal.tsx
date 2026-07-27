@@ -15,7 +15,6 @@ export interface BookingDraft {
   description: string
   color: string
   start: Date
-  end: Date
   reminderEnabled: boolean
 }
 
@@ -65,10 +64,6 @@ export default function BookingModal({ open, draft, barbers, searchClients, onCl
   const handleSubmit = async () => {
     if (!form.firstName.trim()) {
       setError('Unesi ime klijenta.')
-      return
-    }
-    if (form.end <= form.start) {
-      setError('Vrijeme završetka mora biti nakon vremena početka.')
       return
     }
     setSaving(true)
@@ -192,29 +187,16 @@ export default function BookingModal({ open, draft, barbers, searchClients, onCl
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-ink-400">
-                <Clock size={12} /> Početak
-              </label>
-              <input
-                type="datetime-local"
-                value={toLocalInput(form.start)}
-                onChange={(e) => update({ start: new Date(e.target.value) })}
-                className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-brass-500 focus:outline-none focus:ring-1 focus:ring-brass-500 dark:border-ink-600 dark:bg-ink-900 dark:text-ink-50"
-              />
-            </div>
-            <div>
-              <label className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-ink-400">
-                <Clock size={12} /> Kraj
-              </label>
-              <input
-                type="datetime-local"
-                value={toLocalInput(form.end)}
-                onChange={(e) => update({ end: new Date(e.target.value) })}
-                className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-brass-500 focus:outline-none focus:ring-1 focus:ring-brass-500 dark:border-ink-600 dark:bg-ink-900 dark:text-ink-50"
-              />
-            </div>
+          <div>
+            <label className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-ink-400">
+              <Clock size={12} /> Vrijeme
+            </label>
+            <input
+              type="datetime-local"
+              value={toLocalInput(form.start)}
+              onChange={(e) => update({ start: new Date(e.target.value) })}
+              className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-brass-500 focus:outline-none focus:ring-1 focus:ring-brass-500 dark:border-ink-600 dark:bg-ink-900 dark:text-ink-50"
+            />
           </div>
 
           <div>
