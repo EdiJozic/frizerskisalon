@@ -59,12 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null }
   }
 
-  const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin }
-    })
-  }
+ const signInWithGoogle = async () => {
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: "https://salonmarina.netlify.app/"
+    }
+  })
+}
 
   const signOut = async () => {
     await supabase.auth.signOut()
